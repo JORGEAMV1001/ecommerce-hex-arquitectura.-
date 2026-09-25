@@ -3,7 +3,21 @@
  * No conoce nada de HTTP, Express ni PostgreSQL (capa pura de dominio).
  */
 class Usuario {
-  constructor({ id = null, nombre, email, passwordHash, rol = 'cliente', creadoEn = new Date() }) {
+  // Estados posibles del ciclo de aprobación de una cuenta
+  static ESTADOS = ['pendiente', 'aprobado', 'rechazado'];
+  // Módulos de la aplicación a los que un administrador puede dar/quitar acceso
+  static MODULOS = ['catalogo', 'pedidos'];
+
+  constructor({
+    id = null,
+    nombre,
+    email,
+    passwordHash,
+    rol = 'cliente',
+    estado = 'pendiente',
+    permisos = [],
+    creadoEn = new Date(),
+  }) {
     if (!nombre || nombre.trim().length < 3) {
       throw new Error('El nombre debe tener al menos 3 caracteres');
     }
@@ -13,12 +27,18 @@ class Usuario {
     if (!['cliente', 'administrador'].includes(rol)) {
       throw new Error('Rol inválido, use "cliente" o "administrador"');
     }
+    if (!Usuario.ESTADOS.includes(estado)) {
+      throw new Error('Estado inválido, use "pendiente", "aprobado" o "rechazado"');
+    }
 
     this.id = id;
     this.nombre = nombre.trim();
     this.email = email.trim().toLowerCase();
     this.passwordHash = passwordHash; // nunca se guarda texto plano
     this.rol = rol;
+    this.estado = estado;
+    // Solo se conservan permisos que correspondan a módulos válidos
+    this.permisos = Array.isArray(permisos) ? permisos.filter((p) => Usuario.MODULOS.includes(p)) : [];
     this.creadoEn = creadoEn;
   }
 
@@ -52,6 +72,15 @@ class Usuario {
     return this.rol === 'administrador';
   }
 
+  estaAprobado() {
+    return this.estado === 'aprobado';
+  }
+
+  /** Un administrador siempre tiene acceso a todos los módulos */
+  tienePermiso(modulo) {
+    return this.esAdministrador() || this.permisos.includes(modulo);
+  }
+
   /** Representación segura: jamás expone el hash de la contraseña */
   toPublicJSON() {
     return {
@@ -59,6 +88,8 @@ class Usuario {
       nombre: this.nombre,
       email: this.email,
       rol: this.rol,
+      estado: this.estado,
+      permisos: this.permisos,
       creadoEn: this.creadoEn,
     };
   }

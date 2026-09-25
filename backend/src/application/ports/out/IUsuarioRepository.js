@@ -10,6 +10,7 @@ class IUsuarioRepository {
   async buscarPorEmail(email) { throw new Error('No implementado'); }
   async listar() { throw new Error('No implementado'); }
   async actualizar(id, datos) { throw new Error('No implementado'); }
+  async actualizarPrivilegios(id, datos) { throw new Error('No implementado'); }
   async eliminar(id) { throw new Error('No implementado'); }
 }
 

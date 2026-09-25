@@ -11,7 +11,7 @@ class RegistrarUsuarioUseCase {
     this.passwordHasher = passwordHasher;
   }
 
-  async ejecutar({ nombre, email, password, rol }) {
+  async ejecutar({ nombre, email, password }) {
     const existente = await this.usuarioRepository.buscarPorEmail(email?.trim().toLowerCase());
     if (existente) {
       throw new Error("Ya existe un usuario registrado con ese email");
@@ -20,7 +20,11 @@ class RegistrarUsuarioUseCase {
     Usuario.validarPoliticaPassword(password);
     const passwordHash = await this.passwordHasher.hash(password);
 
-    const usuario = new Usuario({ nombre, email, passwordHash, rol });
+    // El autorregistro público SIEMPRE crea la cuenta como cliente, pendiente
+    // de aprobación y sin ningún permiso: rol, estado y permisos los asigna
+    // después un administrador. Ignoramos deliberadamente cualquier rol,
+    // estado o permisos que llegaran en la petición.
+    const usuario = new Usuario({ nombre, email, passwordHash, rol: "cliente", estado: "pendiente", permisos: [] });
     const usuarioCreado = await this.usuarioRepository.crear(usuario);
     return usuarioCreado.toPublicJSON();
   }

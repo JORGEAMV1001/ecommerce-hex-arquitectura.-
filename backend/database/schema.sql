@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
     rol             VARCHAR(20)         NOT NULL DEFAULT 'cliente'
                         CHECK (rol IN ('cliente', 'administrador')),
     creado_en       TIMESTAMP           NOT NULL DEFAULT NOW()
+        estado          VARCHAR(20)         NOT NULL DEFAULT 'pendiente'
+                        CHECK (estado IN ('pendiente', 'aprobado', 'rechazado')),
+    permisos        JSONB               NOT NULL DEFAULT '[]'::jsonb,
 );
 
 CREATE TABLE IF NOT EXISTS productos (
@@ -39,6 +42,7 @@ CREATE TABLE IF NOT EXISTS pedido_items (
     nombre_producto     VARCHAR(150)    NOT NULL,
     precio_unitario     NUMERIC(10,2)   NOT NULL CHECK (precio_unitario > 0),
     cantidad            INTEGER         NOT NULL CHECK (cantidad > 0)
+
 );
 
 CREATE INDEX IF NOT EXISTS idx_pedidos_usuario_id ON pedidos(usuario_id);
@@ -49,3 +53,4 @@ CREATE INDEX IF NOT EXISTS idx_pedido_items_producto_id ON pedido_items(producto
 -- INSERT INTO productos (nombre, descripcion, precio, stock) VALUES
 --   ('Teclado mecánico', 'Switches rojos, retroiluminado', 899.00, 25),
 --   ('Mouse inalámbrico', 'Sensor óptico 1600 DPI', 349.50, 40);
+

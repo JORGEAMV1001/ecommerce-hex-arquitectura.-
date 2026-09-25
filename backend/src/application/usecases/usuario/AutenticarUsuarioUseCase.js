@@ -16,6 +16,14 @@ class AutenticarUsuarioUseCase {
     if (!coincide) {
       throw new Error("Credenciales inválidas");
     }
+
+    if (usuario.estado === "pendiente") {
+      throw new Error("Tu cuenta está pendiente de aprobación por un administrador.");
+    }
+    if (usuario.estado === "rechazado") {
+      throw new Error("Tu acceso fue rechazado por un administrador.");
+    }
+
     return usuario.toPublicJSON();
   }
 }

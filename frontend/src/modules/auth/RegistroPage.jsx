@@ -18,7 +18,7 @@ export default function RegistroPage() {
     try {
       await registrar(form);
       setExito(true);
-      setTimeout(() => navigate('/login'), 1200);
+      setTimeout(() => navigate('/login'), 2500);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar usuario');
     }
@@ -44,7 +44,11 @@ export default function RegistroPage() {
         <small>Mínimo 8 caracteres, una mayúscula y un número.</small>
 
         {error && <p className="error">{error}</p>}
-        {exito && <p className="exito">Cuenta creada, redirigiendo a login…</p>}
+        {exito && (
+          <p className="exito">
+            Cuenta creada. Un administrador debe aprobar tu acceso antes de que puedas iniciar sesión.
+          </p>
+        )}
         <button type="submit">Registrarme</button>
       </form>
       <p>

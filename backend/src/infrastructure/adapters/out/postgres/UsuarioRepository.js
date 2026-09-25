@@ -9,6 +9,9 @@ function filaAUsuario(fila) {
     email: fila.email,
     passwordHash: fila.password_hash,
     rol: fila.rol,
+    estado: fila.estado,
+    // pg ya parsea jsonb a un arreglo JS; por seguridad cubrimos el caso null
+    permisos: fila.permisos || [],
     creadoEn: fila.creado_en,
   });
 }
@@ -25,10 +28,17 @@ class UsuarioRepository extends IUsuarioRepository {
 
   async crear(usuario) {
     const sql = `
-      INSERT INTO usuarios (nombre, email, password_hash, rol)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO usuarios (nombre, email, password_hash, rol, estado, permisos)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`;
-    const { rows } = await this.pool.query(sql, [usuario.nombre, usuario.email, usuario.passwordHash, usuario.rol]);
+    const { rows } = await this.pool.query(sql, [
+      usuario.nombre,
+      usuario.email,
+      usuario.passwordHash,
+      usuario.rol,
+      usuario.estado,
+      JSON.stringify(usuario.permisos || []),
+    ]);
     return filaAUsuario(rows[0]);
   }
 
@@ -57,6 +67,21 @@ class UsuarioRepository extends IUsuarioRepository {
       usuario.nombre,
       usuario.email,
       usuario.passwordHash,
+      usuario.rol,
+      id,
+    ]);
+    return filaAUsuario(rows[0]);
+  }
+
+  async actualizarPrivilegios(id, usuario) {
+    const sql = `
+      UPDATE usuarios
+      SET estado = $1, permisos = $2, rol = $3
+      WHERE id = $4
+      RETURNING *`;
+    const { rows } = await this.pool.query(sql, [
+      usuario.estado,
+      JSON.stringify(usuario.permisos || []),
       usuario.rol,
       id,
     ]);

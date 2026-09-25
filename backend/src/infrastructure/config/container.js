@@ -13,6 +13,8 @@ const ObtenerUsuarioUseCase = require('../../application/usecases/usuario/Obtene
 const ListarUsuariosUseCase = require('../../application/usecases/usuario/ListarUsuariosUseCase');
 const ActualizarUsuarioUseCase = require('../../application/usecases/usuario/ActualizarUsuarioUseCase');
 const EliminarUsuarioUseCase = require('../../application/usecases/usuario/EliminarUsuarioUseCase');
+const CrearUsuarioComoAdminUseCase = require('../../application/usecases/usuario/CrearUsuarioComoAdminUseCase');
+const ActualizarPrivilegiosUsuarioUseCase = require('../../application/usecases/usuario/ActualizarPrivilegiosUsuarioUseCase');
 
 // Casos de uso - Producto
 const CrearProductoUseCase = require('../../application/usecases/producto/CrearProductoUseCase');
@@ -51,6 +53,8 @@ function construirContenedor() {
     listarUsuariosUseCase: new ListarUsuariosUseCase({ usuarioRepository }),
     actualizarUsuarioUseCase: new ActualizarUsuarioUseCase({ usuarioRepository, passwordHasher }),
     eliminarUsuarioUseCase: new EliminarUsuarioUseCase({ usuarioRepository }),
+    crearUsuarioComoAdminUseCase: new CrearUsuarioComoAdminUseCase({ usuarioRepository, passwordHasher }),
+    actualizarPrivilegiosUsuarioUseCase: new ActualizarPrivilegiosUsuarioUseCase({ usuarioRepository }),
   });
 
   const productoController = new ProductoController({

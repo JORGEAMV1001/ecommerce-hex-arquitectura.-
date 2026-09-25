@@ -27,4 +27,20 @@ function requiereAdministrador(req, res, next) {
   next();
 }
 
-module.exports = { requiereAutenticacion, requiereAdministrador };
+/**
+ * Middleware de autorización por módulo: exige que el usuario autenticado
+ * tenga el permiso indicado (o sea administrador, que siempre tiene acceso total).
+ * Los permisos viajan dentro del propio JWT (ver UsuarioController.login).
+ */
+function requierePermiso(modulo) {
+  return (req, res, next) => {
+    if (req.usuario?.rol === "administrador") return next();
+    const permisos = req.usuario?.permisos || [];
+    if (!permisos.includes(modulo)) {
+      return res.status(403).json({ error: `No tienes permiso para acceder al módulo de ${modulo}` });
+    }
+    next();
+  };
+}
+
+module.exports = { requiereAutenticacion, requiereAdministrador, requierePermiso };
