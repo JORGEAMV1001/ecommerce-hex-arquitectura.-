@@ -1,4 +1,14 @@
-const ESTADO_INICIAL = "Pendiente de Pago";
+// Traduce el estado interno del dominio al texto que ve el cliente.
+// El valor guardado en la base sigue siendo "pendiente".
+const ETIQUETAS_ESTADO = {
+  pendiente: "Pendiente de Pago",
+  confirmado: "Pago confirmado",
+  cancelado: "Cancelado",
+};
+
+function etiquetaEstado(estado) {
+  return ETIQUETAS_ESTADO[estado] || "Pendiente de Pago";
+}
 
 function escapar(valor) {
   return String(valor ?? "")
@@ -66,7 +76,7 @@ function plantillaComprobanteCliente({
   items,
   instruccionesPago,
 }) {
-  const estado = pedido.estado || ESTADO_INICIAL;
+  const estado = etiquetaEstado(pedido.estado);
   const nombre = cliente.nombre || "cliente";
 
   const text = [
@@ -100,7 +110,7 @@ function plantillaComprobanteCliente({
 }
 
 function plantillaNuevoPedidoAdmin({ cliente, pedido, items }) {
-  const estado = pedido.estado || ESTADO_INICIAL;
+  const estado = etiquetaEstado(pedido.estado);
 
   const text = [
     "Se ha registrado un nuevo pedido.",
@@ -128,4 +138,8 @@ function plantillaNuevoPedidoAdmin({ cliente, pedido, items }) {
   };
 }
 
-module.exports = { plantillaComprobanteCliente, plantillaNuevoPedidoAdmin };
+module.exports = {
+  plantillaComprobanteCliente,
+  plantillaNuevoPedidoAdmin,
+  etiquetaEstado,
+};

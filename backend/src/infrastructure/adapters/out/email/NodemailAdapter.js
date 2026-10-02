@@ -5,11 +5,26 @@ const {
   plantillaNuevoPedidoAdmin,
 } = require("./emailTemplates");
 
+const pausa = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function esLimiteDeEnvios(error) {
+  return (
+    error?.responseCode === 550 ||
+    /too many emails/i.test(error?.message || "")
+  );
+}
+
 class NodemailAdapter extends EmailServicePort {
-  constructor(transporter, remitente) {
+  // Cola interna: los envíos salen uno por uno y con una pausa mínima
+  // entre ellos, para respetar el límite por segundo del proveedor.
+  #cola = Promise.resolve();
+  #ultimoEnvio = 0;
+
+  constructor(transporter, remitente, intervaloMinimoMs = 1500) {
     super();
     this.transporter = transporter;
     this.remitente = remitente;
+    this.intervaloMinimoMs = intervaloMinimoMs;
   }
 
   static desdeEntorno() {
@@ -26,7 +41,40 @@ class NodemailAdapter extends EmailServicePort {
     return new NodemailAdapter(
       transporter,
       process.env.MAIL_FROM || "HexaMarket <no-reply@hexamarket.test>",
+      Number(process.env.MAIL_INTERVALO_MS || 1500),
     );
+  }
+
+  /**
+   * Envía respetando el intervalo mínimo y reintenta (hasta 3 veces)
+   * cuando el proveedor responde que se excedió el límite.
+   */
+  #enviar(mensaje) {
+    const turno = this.#cola.then(async () => {
+      const maxIntentos = 3;
+
+      for (let intento = 1; intento <= maxIntentos; intento++) {
+        const espera =
+          this.intervaloMinimoMs - (Date.now() - this.#ultimoEnvio);
+        if (espera > 0) await pausa(espera);
+
+        try {
+          return await this.transporter.sendMail(mensaje);
+        } catch (error) {
+          if (esLimiteDeEnvios(error) && intento < maxIntentos) {
+            await pausa(this.intervaloMinimoMs * intento);
+            continue;
+          }
+          throw error;
+        } finally {
+          this.#ultimoEnvio = Date.now();
+        }
+      }
+    });
+
+    // Un fallo no debe bloquear los envíos siguientes de la cola
+    this.#cola = turno.catch(() => {});
+    return turno;
   }
 
   async enviarComprobanteCompra({ cliente, pedido, items, instruccionesPago }) {
@@ -37,7 +85,7 @@ class NodemailAdapter extends EmailServicePort {
       instruccionesPago,
     });
 
-    const info = await this.transporter.sendMail({
+    const info = await this.#enviar({
       from: this.remitente,
       to: cliente.email,
       subject,
@@ -58,7 +106,7 @@ class NodemailAdapter extends EmailServicePort {
       items,
     });
 
-    const info = await this.transporter.sendMail({
+    const info = await this.#enviar({
       from: this.remitente,
       to: administradorEmail,
       subject,
